@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:open_source_pro/screens/rent_screen.dart';
+import 'package:open_source_pro/screens/report_screen.dart';
 
 import './models/user.dart';
 import './network/user_service.dart';
+import './screens/crud_Screen.dart';
 import './screens/options_panel.dart';
+import './utilities/local_storage_web.dart';
+import './utilities/validators.dart';
 
 void main() => runApp(SignUpApp());
 
@@ -10,9 +15,29 @@ class SignUpApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        // Define the default brightness and colors.
+        primaryColor: Colors.amber,
+        accentColor: Colors.cyan[600],
+
+        // Define the default font family.
+        fontFamily: 'Georgia',
+
+        // Define the default TextTheme. Use this to specify the default
+        // text styling for headlines, titles, bodies of text, and more.
+        textTheme: TextTheme(
+          headline1: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold),
+          headline6: TextStyle(fontSize: 36.0, fontStyle: FontStyle.italic),
+          bodyText2: TextStyle(fontSize: 14.0, fontFamily: 'Hind'),
+        ),
+      ),
+      debugShowCheckedModeBanner: false,
       routes: {
         '/': (context) => SignUpScreen(),
         '/welcome': (context) => OptionsPanelScreen(),
+        '/crud': (context) => CrudScreen(),
+        '/rent': (context) => RentCarScreen(),
+        '/report': (context) => RentCarReportScreen(),
       },
     );
   }
@@ -53,10 +78,18 @@ class _SignUpFormState extends State<SignUpForm> {
       _passwordTextController,
     ];
 
+    const validationsToCompleteState = 4;
+
     for (var controller in controllers) {
       if (controller.value.text.isNotEmpty) {
-        progress += 1 / controllers.length;
+        progress += 1 / validationsToCompleteState;
       }
+    }
+    if (_passwordTextController.value.text.length > 5) {
+      progress += 1 / validationsToCompleteState;
+    }
+    if (validateEmail(_userTextController.value.text)) {
+      progress += 1 / validationsToCompleteState;
     }
 
     setState(() {
@@ -69,8 +102,14 @@ class _SignUpFormState extends State<SignUpForm> {
         username: _userTextController.value.text,
         password: _passwordTextController.value.text);
     dynamic loggedUser = await login(user);
-    print(loggedUser);
-    //Navigator.of(context).pushNamed('/welcome');
+    if (!(loggedUser is List)) {
+      await WebLocalStorage().save(loggedUser['employee'], "employeeId");
+      Navigator.of(context).pushNamed('/welcome');
+    } else {
+      final snackBar =
+          SnackBar(content: Text('Usuario o Contraseña Incorrecto'));
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
   }
 
   @override
@@ -109,12 +148,15 @@ class _SignUpFormState extends State<SignUpForm> {
                   MaterialStateColor.resolveWith((Set<MaterialState> states) {
                 return states.contains(MaterialState.disabled)
                     ? null
-                    : Colors.blue;
+                    : Colors.amber;
               }),
             ),
             onPressed: _formProgress == 1 ? _showWelcomeScreen : null,
             child: Text('Ingresar'),
           ),
+          SizedBox(
+            height: 3,
+          )
         ],
       ),
     );

@@ -5,7 +5,7 @@ import 'package:http/http.dart';
 import '../models/user.dart';
 
 login(User user) async {
-  String url = 'http://localhost:3000/user/';
+  String url = 'http://localhost:4040/user/';
   Response response = await httpPostUser(user, url);
   if (response.statusCode == 200) {
     //addStringToSF('accessToken', jsonDecode(response.body)['accessToken']);
